@@ -1,0 +1,118 @@
+{% extends 'main.html' %}
+
+{% block title %}
+    Food Truck
+{% endblock %}
+
+{% block style %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        img.huechange {
+            filter: hue-rotate(120deg);
+        }
+    </style>
+{% endblock %}
+{% block body %}
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center p-3">
+                <h1>Food Truck List</h1>
+            </div>
+        </div>
+    </div>
+
+    {% if missing_data %}
+    <div class="alert alert-danger">
+    <h4>Please upload Truck data <a href="{% url 'upload-csv' %}">Here</a> to continue. </h4>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="pt-3 pb-3">
+                <form method="GET" action="{% url 'index' %}">
+                    <div class="form-group">
+                        <label for="latitude">Latitude:</label>
+                        <input class="form-control" type="text" name="latitude" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="longitude">Longitude:</label>
+                        <input class="form-control" type="text" name="longitude" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="results">No of Results (default = 5):</label>
+                        <input class="form-control" type="text" name="results">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            {% if foodtrucks %}
+                <div class="row">
+                    <div class="col-12">
+                        <div id="map-container" class="border p-2">
+                            <div id="map" style="height: 400px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Current Distance (m)</th>
+                        <th scope="col">Location</th>
+                        <th scope="col">Address</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for truck in foodtrucks %}
+                        <tr>
+                            <th scope="row">{{ forloop.counter }}</th>
+                            <td>{{ truck.applicant }}</td>
+                            <td>{{ truck.distance|floatformat:2 }}</td>
+                            <td>{{ truck.location_description }}</td>
+                            <td>{{ truck.address }}</td>
+                        </tr>
+                    {% endfor %}
+
+
+                    </tbody>
+                </table>
+
+
+            {% elif lat %}
+                <p>No food trucks found.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block script %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+        var map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© Food Trucks'
+        }).addTo(map);
+
+        {% for truck in foodtrucks %}
+            L.marker([{{ truck.latitude }}, {{ truck.longitude }}]).addTo(map).bindPopup("{{ truck.applicant }}");
+        {% endfor %}
+        {% if lat and lng %}
+            var me = L.marker([{{ lat }}, {{ lng }}]).addTo(map).bindPopup("You");
+            me._icon.classList.add("huechange");
+            map.setView([{{ lat }}, {{ lng }}], 14);
+        {% endif %}
+    </script>
+
+{% endblock %}
